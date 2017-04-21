@@ -6,7 +6,7 @@ package org.huakai.wechat_xposed;
 
 public class VersionParam {
     public static final String WECHAT_PACKAGE_NAME = "com.tencent.mm";
-
+    public static final String CODOON_PACKAGE_NAME = "com.codoon.gps";
     public static String receiveUIFunctionName = "d";
     public static String receiveUIParamName = "com.tencent.mm.u.k";
     public static String networkRequest = "com.tencent.mm.model.al";
