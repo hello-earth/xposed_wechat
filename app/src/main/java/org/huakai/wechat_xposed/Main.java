@@ -53,7 +53,7 @@ public class Main implements IXposedHookLoadPackage {
 
     @Override
     public void handleLoadPackage(final LoadPackageParam lpparam) throws Throwable {
-        if (lpparam.packageName.equals(VersionParam.CODOON_PACKAGE_NAME)) {
+        if (lpparam.packageName.equals(VersionParam.WECHAT_PACKAGE_NAME)) {
             if (isEmpty(wechatVersion)) {
                 Context context = (Context) callMethod(callStaticMethod(findClass("android.app.ActivityThread", null), "currentActivityThread", new Object[0]), "getSystemContext", new Object[0]);
                 String versionName = context.getPackageManager().getPackageInfo(lpparam.packageName, 0).versionName;
@@ -123,10 +123,9 @@ public class Main implements IXposedHookLoadPackage {
                 }
 
                 int type = (int) getObjectField(param.thisObject, "field_type");
-                if((int) getObjectField(param.thisObject, "field_isSend")==0) {
-                    log("type="+type+"; talker="+getObjectField(param.thisObject, "field_talker").toString()+"; field_content="+
-                            getObjectField(param.thisObject, "field_content").toString());
-                }
+                log("type="+type+"; talker="+getObjectField(param.thisObject, "field_talker").toString()+"; field_content="+
+                        getObjectField(param.thisObject, "field_content").toString());
+
                 //type=1 普通消息
                 //49 分享
                 //0x19000031 转账
@@ -269,9 +268,9 @@ public class Main implements IXposedHookLoadPackage {
 
     private void hookMethods(final ClassLoader cl) {
         log("init hookMethods");
-        hookCodoonInfo(cl);
-//		hookWechatId(cl);
-//		hookLuckyMoney(cl);
+//        hookCodoonInfo(cl);
+		hookWechatId(cl);
+		hookLuckyMoney(cl);
 //		hookSnsInfo(cl);
     }
 
