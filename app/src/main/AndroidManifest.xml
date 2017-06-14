@@ -23,7 +23,7 @@
         <!-- 模块描述 -->
         <meta-data
             android:name="xposeddescription"
-            android:value="Developer: ValarHao" />
+            android:value="Developer: YoungLIU" />
 
         <!-- XposedBridgeApi的最低版本号 -->
         <meta-data

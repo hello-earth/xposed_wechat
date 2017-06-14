@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Message;
+import android.telephony.TelephonyManager;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
@@ -27,7 +28,7 @@ public class HookDemo implements IXposedHookLoadPackage {
 
     @Override
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
-        if (lpparam.packageName.equals("com.tencent.mm")) {
+        if (lpparam.packageName.equals("com.wanda.app.wanhui")) {
             Context context = (Context) callMethod(callStaticMethod(findClass("android.app.ActivityThread", null), "currentActivityThread", new Object[0]), "getSystemContext", new Object[0]);
             String versionName = context.getPackageManager().getPackageInfo(lpparam.packageName, 0).versionName;
             iwechatVersion = versionName;
@@ -65,10 +66,23 @@ public class HookDemo implements IXposedHookLoadPackage {
                 new Object[] { Message.class, new MessageWorker(paramClassLoader) });
     }
 
+    private void HookIMEI(ClassLoader paramClassLoader){
+        try{
+            XposedHelpers.findAndHookMethod("TelephonyManager", paramClassLoader, "getDeviceId", new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    param.setResult("855647052734127");
+                }
+            });
+        } catch (Throwable e){
+            e.printStackTrace();
+        }
+    }
+
 
     private void hookMethods(final ClassLoader cl) {
         log("init hookMethods");
-        hookNotification(cl);
+        HookIMEI(cl);
     }
 
 
