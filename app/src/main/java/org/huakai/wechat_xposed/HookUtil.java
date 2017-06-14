@@ -4,15 +4,20 @@ package org.huakai.wechat_xposed;
 import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
-
+import java.lang.reflect.Field;
 import static de.robv.android.xposed.XposedBridge.log;
 import static de.robv.android.xposed.XposedHelpers.callMethod;
 import static de.robv.android.xposed.XposedHelpers.callStaticMethod;
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 import static de.robv.android.xposed.XposedHelpers.findClass;
+import static de.robv.android.xposed.XposedHelpers.getObjectField;
 
 public class HookUtil implements IXposedHookLoadPackage{
 
@@ -77,23 +82,25 @@ public class HookUtil implements IXposedHookLoadPackage{
     }
 
     private void hookMyMethod2() {
-        findAndHookMethod("com.hebao.app.activity.invest.PocketDetailActivity", cl, "onCreate", Bundle.class, new XC_MethodHook() {
+        findAndHookMethod("com.hebao.app.activity.fragment.FragmentHomePage", cl, "onCreateView",
+                LayoutInflater.class, ViewGroup.class, Bundle.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                log("HQ");
-//                log("\n");
-//                logObjInfo(param.thisObject);
-//                log("\n");
-                log("\n");
-                logStackInfo();
-                log("\n");
+                View button = (View)getObjectField(param.thisObject, "Z");
+                if(button!=null) {
+                    log("found the redpack button and click it.");
+                    MessageLooper mLooper = new MessageLooper("",button);
+                    new Thread(mLooper).start();
+                }else{
+                    log("oopppps, not found the redpack button.");
+                }
             }
         });
     }
 
     private void hookMethods(){
         log("init hebao hooker~~");
-        hookMyMethod1();
+//        hookMyMethod1();
         hookMyMethod2();
     }
 }
