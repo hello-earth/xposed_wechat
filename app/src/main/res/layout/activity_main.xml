@@ -9,4 +9,5 @@
         android:layout_height="wrap_content"
         android:id="@+id/textView"
         android:layout_weight="1"/>
+
 </LinearLayout>

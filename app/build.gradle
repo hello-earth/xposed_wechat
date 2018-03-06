@@ -27,4 +27,6 @@ dependencies {
     provided 'de.robv.android.xposed:api:82'
     compile 'com.alibaba:fastjson:1.2.24'
     compile 'com.google.code.gson:gson:2.2.4'
+    compile 'com.squareup.okhttp3:okhttp:3.6.0'
+    compile 'com.squareup.okio:okio:1.11.0'
 }

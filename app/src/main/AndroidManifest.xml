@@ -29,6 +29,9 @@
         <meta-data
             android:name="xposedminversion"
             android:value="54" />
+
+        <receiver android:name=".TaskWorker" />
+
     </application>
 
 </manifest>
