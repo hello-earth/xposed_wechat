@@ -16,6 +16,10 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.List;
+
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
@@ -24,6 +28,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 import static de.robv.android.xposed.XposedBridge.log;
 import static de.robv.android.xposed.XposedHelpers.callMethod;
 import static de.robv.android.xposed.XposedHelpers.callStaticMethod;
+import static de.robv.android.xposed.XposedHelpers.findAndHookConstructor;
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 import static de.robv.android.xposed.XposedHelpers.findClass;
 import static de.robv.android.xposed.XposedHelpers.getObjectField;
@@ -53,6 +58,13 @@ public class HookUtil implements IXposedHookLoadPackage{
         java.lang.reflect.Field field=cls.getDeclaredField(name);
         field.setAccessible(true);
         return field.get(obj);
+    }
+
+    public static void setValue(Object instance, String fileName, Object value)
+            throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        java.lang.reflect.Field field = instance.getClass().getDeclaredField(fileName);
+        field.setAccessible(true);
+        field.set(instance, value);
     }
 
     private static void logStackInfo() {
@@ -109,7 +121,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        log("//////////////showCountTimeFinish/////////////////");
+                        log("//////////////showCountTimeFinish///////////////// @"+getCurrentTime());
                         Object button = findObj(param.thisObject,"aT");
                         if(button!=null)
                             ((Button)button).performClick();
@@ -121,10 +133,12 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        log("//////////////RentHouseDetailFragment/////////////////");
+                        log("//////////////RentHouseDetailFragment///////////////// @"+getCurrentTime());
                         Object button = findObj(param.thisObject,"aT");
-                        if(button!=null)
-                            ((Button)button).performClick();
+                        if(button!=null){
+                            if(((Button)button).isEnabled())
+                                ((Button)button).performClick();
+                        }
                     }
                 }
         );
@@ -132,7 +146,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        log("//////////////SignedCertInfoConfirmActivity/////////////////");
+                        log("//////////////SignedCertInfoConfirmActivity///////////////// @"+getCurrentTime());
                         Object button = findObj(param.thisObject,"cert_info_confirm_btn");
                         if(button!=null)
                             ((TextView)button).performClick();
@@ -144,7 +158,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        log("//////////////SignerAptitudeActivity/////////////////");
+                        log("//////////////SignerAptitudeActivity///////////////// @"+getCurrentTime());
                         final Object button = findObj(param.thisObject,"signer_btn_next");
                         if(button!=null)
                             new Handler().postDelayed(new Runnable() {
@@ -162,7 +176,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        log("//////////////SignedLeaseInfoActivity TenancyInfo/////////////////");
+                        log("//////////////SignedLeaseInfoActivity TenancyInfo///////////////// @"+getCurrentTime());
                         Object obj = findObj(param.thisObject,"r");
                         CheckBox cb = (CheckBox)XposedHelpers.callMethod(obj,"getCheckBox");
                         cb.setChecked(true);
@@ -176,34 +190,91 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        log("//////////////PayTermsActivity/////////////////");
+                        log("//////////////PayTermsActivity///////////////// @"+getCurrentTime());
                         Object obj = findObj(param.thisObject,"g");
+                        List<Integer> ints = (List<Integer>)XposedHelpers.callMethod(obj, "getmList");
                         obj = XposedHelpers.callMethod(obj, "getmOnCheck");
-                        XposedHelpers.callMethod(obj, "onItemClick", new Object[]{3});
+                        XposedHelpers.callMethod(obj, "onItemClick", new Object[]{ints.indexOf(3)});
+                        final Object button = findObj(param.thisObject,"c");
+                        if(button!=null)
+                            new Handler().post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((Button)button).performClick();
+                                }
+                            });
                     }
                 }
         );
 
-//        findAndHookMethod("com.ziroom.ziroomcustomer.signed.ContractTermsActivity", cl, "onCreate",
-//                Bundle.class,
-//                new XC_MethodHook() {
-//                    @Override
-//                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-//                        log("//////////////SignedLeaseInfoActivity/////////////////");
-//                        new Handler().postDelayed(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                try {
-//                                    XposedHelpers.callMethod(param.thisObject, "e");
-//                                } catch (Throwable throwable) {
-//                                    throwable.printStackTrace();
-//                                }
-//                            }
-//                        }, 800);
-//                    }
-//                }
-//        );
-        //"PayTermsActivity";
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.ContractTermsActivity", cl, "onCreate",
+                Bundle.class,
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
+                        log("//////////////SignedLeaseInfoActivity///////////////// @"+getCurrentTime());
+                        final Object button = findObj(param.thisObject,"f");
+                        if(button!=null) {
+                            setValue(param.thisObject,"r",1);
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((Button) button).performClick();
+                                }
+                            }, 300);
+                        }
+                    }
+                }
+        );
+
+        findAndHookConstructor("com.ziroom.ziroomcustomer.signed.SignedWebActivity$4", cl,
+                "com.ziroom.ziroomcustomer.signed.SignedWebActivity",
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
+                        log("//////////////SignedWebActivity$4///////////////// @"+getCurrentTime());
+                        XposedHelpers.callMethod(param.thisObject, "onJsLinkCallBack", new Object[]{""});
+                    }
+                }
+        );
+
+
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.PayInformationActivity", cl, "a",
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
+                        log("//////////////PayInformationActivity///////////////// @"+getCurrentTime());
+                        final Object button = findObj(param.thisObject,"D");
+                        if(button!=null) {
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((Button) button).performClick();
+                                }
+                            }, 500);
+                        }
+                    }
+                }
+        );
+
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.ConfirmContractActivity", cl, "b",
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
+                        log("//////////////ConfirmContractActivity///////////////// @"+getCurrentTime());
+                        final Object button = findObj(param.thisObject,"K");
+                        if(button!=null) {
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((Button) button).performClick();
+                                }
+                            }, 300);
+                        }
+                    }
+                }
+        );
+
 
 //        Class<?> mModleWorkerProfileClass = findClass("", cl);
 ////        callStaticMethod(mModleWorkerProfileClass, "getRentHouseDetail", new Object[]{context,"61033245","60166155",null});
@@ -221,5 +292,11 @@ public class HookUtil implements IXposedHookLoadPackage{
         hookMyMethod3();
 //        hookMyMethod2();
 
+    }
+
+    public static String getCurrentTime() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String time = format.format(new Timestamp(System.currentTimeMillis()));
+        return time;
     }
 }
