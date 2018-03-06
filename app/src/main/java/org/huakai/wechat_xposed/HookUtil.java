@@ -251,7 +251,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                                 public void run() {
                                     ((Button) button).performClick();
                                 }
-                            }, 500);
+                            }, 1300);
                         }
                     }
                 }
