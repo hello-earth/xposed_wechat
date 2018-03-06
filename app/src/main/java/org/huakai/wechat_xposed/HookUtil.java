@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -74,6 +75,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                     context = (Context) param.args[0];
                     cl = ((Context) param.args[0]).getClassLoader();
                     hookMethods();
+                    HideModule.hide(cl);
                 }
             });
         }
@@ -119,13 +121,89 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        log("//////////////showBottom/////////////////");
+                        log("//////////////RentHouseDetailFragment/////////////////");
                         Object button = findObj(param.thisObject,"aT");
                         if(button!=null)
                             ((Button)button).performClick();
                     }
                 }
         );
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignedCertInfoConfirmActivity", cl, "a",
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        log("//////////////SignedCertInfoConfirmActivity/////////////////");
+                        Object button = findObj(param.thisObject,"cert_info_confirm_btn");
+                        if(button!=null)
+                            ((TextView)button).performClick();
+                    }
+                }
+        );
+
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignerAptitudeActivity", cl, "e",
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        log("//////////////SignerAptitudeActivity/////////////////");
+                        final Object button = findObj(param.thisObject,"signer_btn_next");
+                        if(button!=null)
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((Button)button).performClick();
+                                }
+                            },500);
+                    }
+                }
+        );
+
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignedLeaseInfoActivity", cl, "a",
+                "com.ziroom.ziroomcustomer.model.TenancyInfo",
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
+                        log("//////////////SignedLeaseInfoActivity TenancyInfo/////////////////");
+                        Object obj = findObj(param.thisObject,"r");
+                        CheckBox cb = (CheckBox)XposedHelpers.callMethod(obj,"getCheckBox");
+                        cb.setChecked(true);
+                        XposedHelpers.callMethod(param.thisObject, "e");
+                    }
+                }
+        );
+
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.PayTermsActivity", cl, "onCreate",
+                Bundle.class,
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
+                        log("//////////////PayTermsActivity/////////////////");
+                        Object obj = findObj(param.thisObject,"g");
+                        obj = XposedHelpers.callMethod(obj, "getmOnCheck");
+                        XposedHelpers.callMethod(obj, "onItemClick", new Object[]{3});
+                    }
+                }
+        );
+
+//        findAndHookMethod("com.ziroom.ziroomcustomer.signed.ContractTermsActivity", cl, "onCreate",
+//                Bundle.class,
+//                new XC_MethodHook() {
+//                    @Override
+//                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
+//                        log("//////////////SignedLeaseInfoActivity/////////////////");
+//                        new Handler().postDelayed(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                try {
+//                                    XposedHelpers.callMethod(param.thisObject, "e");
+//                                } catch (Throwable throwable) {
+//                                    throwable.printStackTrace();
+//                                }
+//                            }
+//                        }, 800);
+//                    }
+//                }
+//        );
+        //"PayTermsActivity";
 
 //        Class<?> mModleWorkerProfileClass = findClass("", cl);
 ////        callStaticMethod(mModleWorkerProfileClass, "getRentHouseDetail", new Object[]{context,"61033245","60166155",null});

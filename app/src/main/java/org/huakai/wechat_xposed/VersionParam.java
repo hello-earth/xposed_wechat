@@ -5,7 +5,7 @@ package org.huakai.wechat_xposed;
  */
 
 public class VersionParam {
-    public static final String WECHAT_PACKAGE_NAME = "com.tencent.mm";
+    public static final String WECHAT_PACKAGE_NAME = "com.ziroom.ziroomcustomer";
     public static String receiveUIFunctionName = "d";
     public static String receiveUIParamName = WECHAT_PACKAGE_NAME+".u.k";
     public static String networkRequest = WECHAT_PACKAGE_NAME+".model.ah";
