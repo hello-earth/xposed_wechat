@@ -1,37 +1,28 @@
 package org.huakai.wechat_xposed;
 
 
+import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
+import android.content.DialogInterface;
 import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TextView;
-
+import android.widget.Toast;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.List;
-
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
-
-import static de.robv.android.xposed.XposedBridge.log;
-import static de.robv.android.xposed.XposedHelpers.callMethod;
-import static de.robv.android.xposed.XposedHelpers.callStaticMethod;
 import static de.robv.android.xposed.XposedHelpers.findAndHookConstructor;
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
-import static de.robv.android.xposed.XposedHelpers.findClass;
-import static de.robv.android.xposed.XposedHelpers.getObjectField;
 
 public class HookUtil implements IXposedHookLoadPackage{
 
@@ -41,16 +32,16 @@ public class HookUtil implements IXposedHookLoadPackage{
 
     private static void logObjInfo(Object obj) throws Throwable {
         Class cls = obj.getClass();
-        log("Object info begin");
-        log("Name: " + cls.getName());
+        logMsg("Object info begin");
+        logMsg("Name: " + cls.getName());
         java.lang.reflect.Field[] fields = cls.getDeclaredFields();
         if (fields != null) {
             for (int i = 0; i < fields.length; i++) {
                 java.lang.reflect.Field field = fields[i];
-                log(field.getName() );
+                logMsg(field.getName() );
             }
         }
-        log("Object info ended");
+        logMsg("Object info ended");
     }
 
     private static Object findObj(Object obj,String name) throws Throwable {
@@ -68,13 +59,13 @@ public class HookUtil implements IXposedHookLoadPackage{
     }
 
     private static void logStackInfo() {
-        log("Stack info begin");
+        logMsg("Stack info begin");
         StackTraceElement[] stackTraceElements = (new Throwable()).getStackTrace();
         for (int i = 0; i < stackTraceElements.length; i++) {
             StackTraceElement stackTraceElement = stackTraceElements[i];
-            log(stackTraceElement.toString());
+            logMsg(stackTraceElement.toString());
         }
-        log("Stack info ended");
+        logMsg("Stack info ended");
     }
 
 
@@ -99,7 +90,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                        log("on onReceivedSslError~~");
+                        logMsg("on onReceivedSslError~~");
                     }
                 }
         );
@@ -121,7 +112,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        log("//////////////showCountTimeFinish///////////////// @"+getCurrentTime());
+                        logMsg("//////////////showCountTimeFinish///////////////// @"+getCurrentTime());
                         Object button = findObj(param.thisObject,"aT");
                         if(button!=null)
                             ((Button)button).performClick();
@@ -133,11 +124,36 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        log("//////////////RentHouseDetailFragment///////////////// @"+getCurrentTime());
-                        Object button = findObj(param.thisObject,"aT");
+                        logMsg("//////////////RentHouseDetailFragment///////////////// @"+getCurrentTime());
+                        final Object button = findObj(param.thisObject,"aT");
                         if(button!=null){
-                            if(((Button)button).isEnabled())
-                                ((Button)button).performClick();
+                            if(((Button)button).isEnabled()){
+                                AlertDialog.Builder builder = new AlertDialog.Builder((Context)findObj(param.thisObject,"bo"));
+                                builder.setTitle("提示");
+                                builder.setMessage("是否执行抢房操作？");
+                                builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                });
+                                builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                        ((Button)button).performClick();
+                                    }
+                                });
+                                AlertDialog dialog = builder.create();
+                                dialog.show();
+                            } else {
+                                new Handler().postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(context,"///*////暂不可签约///*////\n"+((Button)button).getText().toString(),Toast.LENGTH_SHORT).show();
+                                    }
+                                }, 1300);
+                            }
                         }
                     }
                 }
@@ -146,7 +162,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        log("//////////////SignedCertInfoConfirmActivity///////////////// @"+getCurrentTime());
+                        logMsg("//////////////SignedCertInfoConfirmActivity///////////////// @"+getCurrentTime());
                         Object button = findObj(param.thisObject,"cert_info_confirm_btn");
                         if(button!=null)
                             ((TextView)button).performClick();
@@ -158,7 +174,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        log("//////////////SignerAptitudeActivity///////////////// @"+getCurrentTime());
+                        logMsg("//////////////SignerAptitudeActivity///////////////// @"+getCurrentTime());
                         final Object button = findObj(param.thisObject,"signer_btn_next");
                         if(button!=null)
                             new Handler().postDelayed(new Runnable() {
@@ -176,7 +192,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        log("//////////////SignedLeaseInfoActivity TenancyInfo///////////////// @"+getCurrentTime());
+                        logMsg("//////////////SignedLeaseInfoActivity TenancyInfo///////////////// @"+getCurrentTime());
                         Object obj = findObj(param.thisObject,"r");
                         CheckBox cb = (CheckBox)XposedHelpers.callMethod(obj,"getCheckBox");
                         cb.setChecked(true);
@@ -190,7 +206,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        log("//////////////PayTermsActivity///////////////// @"+getCurrentTime());
+                        logMsg("//////////////PayTermsActivity///////////////// @"+getCurrentTime());
                         Object obj = findObj(param.thisObject,"g");
                         List<Integer> ints = (List<Integer>)XposedHelpers.callMethod(obj, "getmList");
                         obj = XposedHelpers.callMethod(obj, "getmOnCheck");
@@ -212,7 +228,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        log("//////////////SignedLeaseInfoActivity///////////////// @"+getCurrentTime());
+                        logMsg("//////////////SignedLeaseInfoActivity///////////////// @"+getCurrentTime());
                         final Object button = findObj(param.thisObject,"f");
                         if(button!=null) {
                             setValue(param.thisObject,"r",1);
@@ -232,7 +248,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        log("//////////////SignedWebActivity$4///////////////// @"+getCurrentTime());
+                        logMsg("//////////////SignedWebActivity$4///////////////// @"+getCurrentTime());
                         XposedHelpers.callMethod(param.thisObject, "onJsLinkCallBack", new Object[]{""});
                     }
                 }
@@ -243,7 +259,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        log("//////////////PayInformationActivity///////////////// @"+getCurrentTime());
+                        logMsg("//////////////PayInformationActivity///////////////// @"+getCurrentTime());
                         final Object button = findObj(param.thisObject,"D");
                         if(button!=null) {
                             new Handler().postDelayed(new Runnable() {
@@ -251,7 +267,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                                 public void run() {
                                     ((Button) button).performClick();
                                 }
-                            }, 1300);
+                            }, 1500);
                         }
                     }
                 }
@@ -261,7 +277,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        log("//////////////ConfirmContractActivity///////////////// @"+getCurrentTime());
+                        logMsg("//////////////ConfirmContractActivity///////////////// @"+getCurrentTime());
                         final Object button = findObj(param.thisObject,"K");
                         if(button!=null) {
                             new Handler().postDelayed(new Runnable() {
@@ -287,8 +303,12 @@ public class HookUtil implements IXposedHookLoadPackage{
 //        }
     }
 
+    private static  void logMsg(String msg){
+        System.out.println(msg);
+    }
+
     private void hookMethods(){
-        log("init ziroom hooker~~");
+        logMsg("init ziroom hooker~~");
         hookMyMethod3();
 //        hookMyMethod2();
 
