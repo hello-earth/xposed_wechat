@@ -8,6 +8,8 @@ import android.content.DialogInterface;
 import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
+import android.text.InputType;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebView;
 import android.widget.Button;
@@ -38,7 +40,8 @@ public class HookUtil implements IXposedHookLoadPackage{
         if (fields != null) {
             for (int i = 0; i < fields.length; i++) {
                 java.lang.reflect.Field field = fields[i];
-                logMsg(field.getName() );
+                field.setAccessible(true);
+                logMsg(field.getName() +": "+field.get(obj));
             }
         }
         logMsg("Object info ended");
@@ -254,43 +257,39 @@ public class HookUtil implements IXposedHookLoadPackage{
                 }
         );
 
-
-        findAndHookMethod("com.ziroom.ziroomcustomer.signed.PayInformationActivity", cl, "a",
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.PayInformationActivity$1", cl, "handleMessage",
+                Message.class,
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        logMsg("//////////////PayInformationActivity///////////////// @"+getCurrentTime());
-                        final Object button = findObj(param.thisObject,"D");
-                        if(button!=null) {
-                            new Handler().postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ((Button) button).performClick();
-                                }
-                            }, 1500);
+                        logMsg("//////////////PayInformationActivity$1///////////////// @"+getCurrentTime());
+                        Message msg = (Message)(param.args[0]);
+                        if(msg.what==69664 && ((Boolean) XposedHelpers.callMethod(msg.obj,"getSuccess")).booleanValue()){
+                            Object button = findObj(findObj(param.thisObject,"a"),"D");
+                            if(button!=null) {
+                                ((Button) button).performClick();
+                            }
                         }
                     }
                 }
         );
 
-        findAndHookMethod("com.ziroom.ziroomcustomer.signed.ConfirmContractActivity", cl, "b",
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.ConfirmContractActivity$1", cl, "handleMessage",
+                Message.class,
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        logMsg("//////////////ConfirmContractActivity///////////////// @"+getCurrentTime());
-                        final Object button = findObj(param.thisObject,"K");
-                        if(button!=null) {
-                            new Handler().postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ((Button) button).performClick();
-                                }
-                            }, 300);
+                        logMsg("//////////////ConfirmContractActivity$1///////////////// @"+getCurrentTime());
+                        Message msg = (Message)(param.args[0]);
+                        if(msg.what==69779 && ((Boolean) XposedHelpers.callMethod(msg.obj,"getSuccess")).booleanValue()){
+                            Object button = findObj(findObj(param.thisObject,"a"),"K");
+                            if(button!=null) {
+                                ((Button) button).performClick();
+                            }
                         }
                     }
                 }
         );
-
 
 //        Class<?> mModleWorkerProfileClass = findClass("", cl);
 ////        callStaticMethod(mModleWorkerProfileClass, "getRentHouseDetail", new Object[]{context,"61033245","60166155",null});
