@@ -1,6 +1,5 @@
 package org.huakai.wechat_xposed;
 
-
 import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Context;
@@ -9,7 +8,6 @@ import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.text.InputType;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebView;
 import android.widget.Button;
@@ -23,14 +21,13 @@ import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
-import static de.robv.android.xposed.XposedHelpers.findAndHookConstructor;
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 
 public class HookUtil implements IXposedHookLoadPackage{
 
     static ClassLoader cl;
     static Context context;
-
+    private static boolean isDug = false;
 
     private static void logObjInfo(Object obj) throws Throwable {
         Class cls = obj.getClass();
@@ -173,19 +170,13 @@ public class HookUtil implements IXposedHookLoadPackage{
                 }
         );
 
-        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignerAptitudeActivity", cl, "e",
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignerAptitudeActivity", cl, "a",
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         logMsg("//////////////SignerAptitudeActivity///////////////// @"+getCurrentTime());
                         final Object button = findObj(param.thisObject,"signer_btn_next");
-                        if(button!=null)
-                            new Handler().postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ((Button)button).performClick();
-                                }
-                            },500);
+                        if(button!=null) ((Button)button).performClick();
                     }
                 }
         );
@@ -226,36 +217,36 @@ public class HookUtil implements IXposedHookLoadPackage{
                 }
         );
 
-        findAndHookMethod("com.ziroom.ziroomcustomer.signed.ContractTermsActivity", cl, "onCreate",
-                Bundle.class,
-                new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        logMsg("//////////////SignedLeaseInfoActivity///////////////// @"+getCurrentTime());
-                        final Object button = findObj(param.thisObject,"f");
-                        if(button!=null) {
-                            setValue(param.thisObject,"r",1);
-                            new Handler().postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ((Button) button).performClick();
-                                }
-                            }, 300);
-                        }
-                    }
-                }
-        );
-
-        findAndHookConstructor("com.ziroom.ziroomcustomer.signed.SignedWebActivity$4", cl,
-                "com.ziroom.ziroomcustomer.signed.SignedWebActivity",
-                new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                        logMsg("//////////////SignedWebActivity$4///////////////// @"+getCurrentTime());
-                        XposedHelpers.callMethod(param.thisObject, "onJsLinkCallBack", new Object[]{""});
-                    }
-                }
-        );
+//        findAndHookMethod("com.ziroom.ziroomcustomer.signed.ContractTermsActivity", cl, "onCreate",
+//                Bundle.class,
+//                new XC_MethodHook() {
+//                    @Override
+//                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
+//                        logMsg("//////////////SignedLeaseInfoActivity///////////////// @"+getCurrentTime());
+//                        final Object button = findObj(param.thisObject,"f");
+//                        if(button!=null) {
+//                            setValue(param.thisObject,"r",1);
+//                            new Handler().postDelayed(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    ((Button) button).performClick();
+//                                }
+//                            }, 300);
+//                        }
+//                    }
+//                }
+//        );
+//
+//        findAndHookConstructor("com.ziroom.ziroomcustomer.signed.SignedWebActivity$4", cl,
+//                "com.ziroom.ziroomcustomer.signed.SignedWebActivity",
+//                new XC_MethodHook() {
+//                    @Override
+//                    protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
+//                        logMsg("//////////////SignedWebActivity$4///////////////// @"+getCurrentTime());
+//                        XposedHelpers.callMethod(param.thisObject, "onJsLinkCallBack", new Object[]{""});
+//                    }
+//                }
+//        );
 
         findAndHookMethod("com.ziroom.ziroomcustomer.signed.PayInformationActivity$1", cl, "handleMessage",
                 Message.class,
@@ -303,7 +294,8 @@ public class HookUtil implements IXposedHookLoadPackage{
     }
 
     private static  void logMsg(String msg){
-        System.out.println(msg);
+        if(isDug)
+            System.out.println(msg);
     }
 
     private void hookMethods(){
