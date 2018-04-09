@@ -1,314 +1,183 @@
 package org.huakai.wechat_xposed;
 
-import android.app.Activity;
 import android.app.Application;
-import android.content.ClipboardManager;
-import android.content.ContentValues;
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.database.Cursor;
-import android.database.DatabaseUtils;
-import android.net.Uri;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
-import android.util.AttributeSet;
-import android.view.View;
-import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.Toast;
+import android.os.Handler;
 
-import com.google.gson.Gson;
+import org.huakai.wechat_xposed.ledscoket.SocketService;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Map;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
-
-import static android.text.TextUtils.isEmpty;
-import static android.widget.Toast.LENGTH_LONG;
-import static de.robv.android.xposed.XposedBridge.log;
-import static de.robv.android.xposed.XposedHelpers.callMethod;
-import static de.robv.android.xposed.XposedHelpers.callStaticMethod;
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 import static de.robv.android.xposed.XposedHelpers.findClass;
-import static de.robv.android.xposed.XposedHelpers.findFirstFieldByExactType;
-import static de.robv.android.xposed.XposedHelpers.getObjectField;
-import static de.robv.android.xposed.XposedHelpers.newInstance;
 
-public class Main implements IXposedHookLoadPackage {
+public class Main implements IXposedHookLoadPackage{
 
-    private static Object requestCaller;
-
-    private static String wechatVersion = "";
-
-    @Override
-    public void handleLoadPackage(final LoadPackageParam lpparam) throws Throwable {
-        if (lpparam.packageName.equals(VersionParam.WECHAT_PACKAGE_NAME)) {
-            if (isEmpty(wechatVersion)) {
-                Context context = (Context) callMethod(callStaticMethod(findClass("android.app.ActivityThread", null), "currentActivityThread", new Object[0]), "getSystemContext", new Object[0]);
-                String versionName = context.getPackageManager().getPackageInfo(lpparam.packageName, 0).versionName;
-                log("Found wechat version:" + versionName);
-                wechatVersion = versionName;
-                VersionParam.init(versionName);
-            }
-
-            findAndHookMethod(Application.class, "attach", Context.class, new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    final ClassLoader cl = ((Context) param.args[0]).getClassLoader();
-                    hookMethods(cl);
-                    HideModule.hide(cl);
-                }
-            });
-        }
-    }
+    static Context context;
+    private static boolean isDug = true;
+    private static List<ClassLoader> paramClassLoaders = new ArrayList<>();
+    private static Class<?> mModleWorkerProfileClass;
+    private static OnGotsmsBroadcastReceiver reciver;
+    private static Context myApplication;
 
     private static void logObjInfo(Object obj) throws Throwable {
         Class cls = obj.getClass();
-        log("Object info begin");
-        log("Name: " + cls.getName());
-        java.lang.reflect.Field[] fields = cls.getFields();
+        logMsg("Object info begin");
+        logMsg("Name: " + cls.getName());
+        java.lang.reflect.Field[] fields = cls.getDeclaredFields();
         if (fields != null) {
             for (int i = 0; i < fields.length; i++) {
                 java.lang.reflect.Field field = fields[i];
-                log(field.getName() + ":" + field.get(obj));
+                field.setAccessible(true);
+                logMsg(field.getName() +": "+field.get(obj));
             }
         }
-        log("Object info ended");
+        logMsg("Object info ended");
+    }
+
+    private static Object findObj(Object obj,String name) throws Throwable {
+        Class cls = obj.getClass();
+        java.lang.reflect.Field field=cls.getDeclaredField(name);
+        field.setAccessible(true);
+        return field.get(obj);
+    }
+
+    public static void setValue(Object instance, String fileName, Object value)
+            throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        java.lang.reflect.Field field = instance.getClass().getDeclaredField(fileName);
+        field.setAccessible(true);
+        field.set(instance, value);
     }
 
     private static void logStackInfo() {
-        log("Stack info begin");
+        logMsg("Stack info begin");
         StackTraceElement[] stackTraceElements = (new Throwable()).getStackTrace();
         for (int i = 0; i < stackTraceElements.length; i++) {
             StackTraceElement stackTraceElement = stackTraceElements[i];
-            log(stackTraceElement.toString());
+            logMsg(stackTraceElement.toString());
         }
-        log("Stack info ended");
+        logMsg("Stack info ended");
     }
 
-    private void hookLuckyMoney(final ClassLoader cl) {
-        findAndHookMethod(VersionParam.getMessageClass, cl, "b", Cursor.class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                if (!PreferencesUtils.open()) {
-                    return;
-                }
 
-                if (PreferencesUtils.debugObjInfo() &&  ((int) getObjectField(param.thisObject, "field_isSend")==0)) {
-                    Class cls = param.thisObject.getClass();
-                    log("\n");
-                    logObjInfo(param.thisObject);
-                    log("\n");
-
-                    System.out.println("CurrentRow:");
-                    DatabaseUtils.dumpCurrentRow((Cursor) param.args[0]);
-                    System.out.println("CurrentRow ended.\n");
-                }
-
-                if (PreferencesUtils.debugStackInfo()) {
-                    log("\n");
-                    logStackInfo();
-                    log("\n");
-                }
-
-                int type = (int) getObjectField(param.thisObject, "field_type");
-                log("type="+type+"; talker="+getObjectField(param.thisObject, "field_talker").toString()+"; field_content="+
-                        getObjectField(param.thisObject, "field_content").toString());
-
-                //type=1 普通消息
-                //49 分享
-                //0x19000031 转账
-                //0x1a000031 0x1C000031 红包
-                if(type==0x1){
-                    String talker = getObjectField(param.thisObject, "field_talker").toString();
-                    if("big-brave".equals(talker)){
-
-                    }
-                }
-                else if (type == 0x1A000031 || type == 0x1C000031) {
-
-                    int status = (int) getObjectField(param.thisObject, "field_status");
-                    if (status == 4) {
-                        return;
-                    }
-
-                    int isSend = (int) getObjectField(param.thisObject, "field_isSend");
-                    if (PreferencesUtils.notSelf() && isSend != 0) {
-                        return;
-                    }
-
-                    String talker = getObjectField(param.thisObject, "field_talker").toString();
-
-                    if (!isGroupTalk(talker)) {
-                        if (PreferencesUtils.notWhisper()) {
-                            return;
+    @Override
+    public void handleLoadPackage(LoadPackageParam lpparam) throws Throwable{
+        if (lpparam.packageName.indexOf("com.zcbl.bjjj_driving")!=-1) {
+            findAndHookMethod("com.stub.StubApp", lpparam.classLoader, "ᵢˋ", Context.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                            if(param!=null) {
+                                context = (Context) param.args[0];
+                                addClassLoader(context.getClassLoader());
+                            }
                         }
-                        if (isSend != 0) {
-                            return;
-                        }
-                    }
+                    });
+        }
+    }
 
-                    String blackList = PreferencesUtils.blackList();
-                    if (!isEmpty(blackList)) {
-                        for (String wechatId : blackList.split(",")) {
-                            if (talker.equals(wechatId.trim())) {
-                                return;
+    private void addClassLoader(ClassLoader cl){
+        if(reciver==null) {
+            reciver = new OnGotsmsBroadcastReceiver();
+            IntentFilter filter = new IntentFilter();
+            filter.addAction("wxRobot.action.onGotsms");
+            context.registerReceiver(reciver, filter);
+            Intent startServiceIntent = new Intent(context, SocketService.class);
+            startServiceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startService(startServiceIntent);
+        }
+        synchronized (paramClassLoaders) {
+            paramClassLoaders.add(cl);
+        }
+        HideModule.hide(cl);
+        logMsg("addClassLoader~~~~ paramClassLoaders size="+paramClassLoaders.size());
+        XposedHelpers.findClass("com.zcbl.driving_simple.activity.MyApplication",cl);
+        hookMyApplication(cl);
+    }
+
+    private ClassLoader getTargetClassLoader(String className) {
+        for (ClassLoader loader : paramClassLoaders){
+            try {
+                XposedHelpers.findClass(className, loader);
+            } catch (Exception ex) {
+                continue;
+            }
+            return loader;
+        }
+        return null;
+    }
+
+    private void hookMyApplication(ClassLoader cl){
+        findAndHookMethod("com.zcbl.driving_simple.activity.FirstPagerAcitivty", cl, "initView", Bundle.class,
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        logMsg("hookMyApplication afterHookedMethod~~~~");
+                        if(param!=null) {
+                            myApplication = (Context)param.thisObject;
+                            try {
+                                Class<?> SecuritySignatureClass = XposedHelpers.findClass("com.alibaba.wireless.security.jaq.SecuritySignature", getTargetClassLoader("com.alibaba.wireless.security.jaq.SecuritySignature"));
+                                Object SecuritySignature = XposedHelpers.newInstance(SecuritySignatureClass, new Object[]{myApplication});
+                                String result = XposedHelpers.callMethod(SecuritySignature, "atlasSign", new Object[]{"7472018-4-102C9CE212C53D4475AC236AF1CEFCC8A6hb135761802120101199306189516205007492018-04-09 11:26:47", "ab0d12bf-b0ec-4694-bc3e-c67689c36bab"}).toString();
+                                logMsg(result);
+                            }catch (Exception ex){
+                                ex.printStackTrace();
                             }
                         }
                     }
-
-                    String contentXml = getObjectField(param.thisObject, "field_content").toString();
-
-                    String senderTitle = getFromXml(contentXml, "sendertitle");
-                    String notContainsWords = PreferencesUtils.notContains();
-                    if (!isEmpty(notContainsWords)) {
-                        for (String word : notContainsWords.split(",")) {
-                            if (senderTitle.contains(word)) {
-                                return;
-                            }
-                        }
-                    }
-
-                    String nativeUrlString = getFromXml(contentXml, "nativeurl");
-                    Uri nativeUrl = Uri.parse(nativeUrlString);
-                    int msgType = Integer.parseInt(nativeUrl.getQueryParameter("msgtype"));
-                    int channelId = Integer.parseInt(nativeUrl.getQueryParameter("channelid"));
-                    String sendId = nativeUrl.getQueryParameter("sendid");
-                    requestCaller = callStaticMethod(findClass(VersionParam.networkRequest, cl), VersionParam.getNetworkByModelMethod);
-
-                    Object luckyMoneyRequest = newInstance(findClass("com.tencent.mm.plugin.luckymoney.c.ab", cl),
-                            msgType, channelId, sendId, nativeUrlString, "", "", talker, "v1.0");
-                    callMethod(requestCaller, "a", luckyMoneyRequest, getDelayTime());
                 }
-            }
-        });
-
-        XposedHelpers.findAndHookMethod(VersionParam.luckyMoneyReceiveUI, cl, VersionParam.receiveUIFunctionName, int.class, int.class, String.class, VersionParam.receiveUIParamName, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                if (PreferencesUtils.quickOpen()) {
-                    Button button = (Button) findFirstFieldByExactType(param.thisObject.getClass(), Button.class).get(param.thisObject);
-                    if (button.isShown() && button.isClickable()) {
-                        button.performClick();
-                    }
-                }
-            }
-        });
-    }
-
-    private void hookWechatId(final ClassLoader cl) {
-        findAndHookMethod("com.tencent.mm.plugin.profile.ui.ContactInfoUI", cl, "onCreate", Bundle.class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                if (PreferencesUtils.showWechatId()) {
-                    Activity activity = (Activity) param.thisObject;
-                    ClipboardManager cmb = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
-                    String wechatId = activity.getIntent().getStringExtra("Contact_User");
-                    cmb.setText(wechatId);
-                    Toast.makeText(activity, "微信ID:" + wechatId + "已复制到剪切板", LENGTH_LONG).show();
-                }
-            }
-        });
-
-        findAndHookMethod("com.tencent.mm.plugin.chatroom.ui.ChatroomInfoUI", cl, "onCreate", Bundle.class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                if (PreferencesUtils.showWechatId()) {
-                    Activity activity = (Activity) param.thisObject;
-                    String wechatId = activity.getIntent().getStringExtra("RoomInfo_Id");
-                    ClipboardManager cmb = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
-                    cmb.setText(wechatId);
-                    Toast.makeText(activity, "微信ID:" + wechatId + "已复制到剪切板", LENGTH_LONG).show();
-                }
-            }
-        });
-    }
-
-    private static Object snsDB;
-
-    private void hookCodoonInfo(final ClassLoader cl) {
-
-        XposedHelpers.findAndHookMethod("com.codoon.gps.util.TokenVerifyUtil", cl, "getGaea",
-                Context.class, String.class,String.class,String.class,String.class, new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        log("getGaea -> paramString1:"+param.args[1]+",paramString2:"+param.args[2]+", paramString3:"+param.args[3]+", paramString4:"+param.args[4]);
-                    }
-                });
-
-        XposedHelpers.findAndHookMethod("com.codoon.gps.http.HttpRequestHelper", cl, "postSportsData",
-                Context.class, String.class, new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        Object mUrlParameterCollection = getObjectField(param.thisObject, "mUrlParameterCollection");
-                        try {
-                            Method DoTask =  XposedHelpers.findMethodBestMatch(mUrlParameterCollection.getClass(), "GetByName",String.class);
-                            Object localObject1 = DoTask.invoke(mUrlParameterCollection,"param");
-                            log("ClubStepSynchronousWithDetailHttp -> "+getObjectField(localObject1, "value").toString());
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        } catch (InvocationTargetException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
+        );
+//        findAndHookMethod("com.zcbl.driving_simple.util.MyLogUtils", cl, "i", String.class,
+//                new XC_MethodHook() {
+//                    @Override
+//                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+//                        logMsg(param.args[0].toString());
+//                    }
+//                }
+//        );
 
     }
 
-    private void hookMethods(final ClassLoader cl) {
-        log("init hookMethods");
-//        hookCodoonInfo(cl);
-		hookWechatId(cl);
-		hookLuckyMoney(cl);
-//		hookSnsInfo(cl);
+
+    private static  void logMsg(String msg){
+        if(isDug)
+            System.out.println(msg);
     }
 
-    private int getRandom(int min, int max) {
-        return min + (int) (Math.random() * (max - min + 1));
+    private void hookMethods(ClassLoader cl){
+        logMsg("init bjjj hooker~~");
     }
 
-    private int getDelayTime() {
-        int delayTime = 0;
-        if (PreferencesUtils.delay()) {
-            delayTime = getRandom(PreferencesUtils.delayMin(), PreferencesUtils.delayMax());
+    public static String getCurrentTime() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String time = format.format(new Timestamp(System.currentTimeMillis()));
+        return time;
+    }
+
+    private class OnGotsmsBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String msg = intent.getStringExtra("msg");
+            Class<?> SecuritySignatureClass = XposedHelpers.findClass("com.alibaba.wireless.security.jaq.SecuritySignature", getTargetClassLoader("com.alibaba.wireless.security.jaq.SecuritySignature"));
+            Object SecuritySignature =XposedHelpers.newInstance(SecuritySignatureClass, new Object[]{myApplication});
+            String result = XposedHelpers.callMethod(SecuritySignature,"atlasSign",new Object[]{msg,"ab0d12bf-b0ec-4694-bc3e-c67689c36bab"}).toString();
+            logMsg("input="+msg+"; sign="+result);
+            Intent mIntent = new Intent();
+            mIntent.setAction("wxRobot.action.onRespond");
+            mIntent.putExtra("msg", result);
+            context.sendBroadcast(mIntent);
         }
-        return delayTime;
     }
 
-    private boolean isGroupTalk(String talker) {
-        return talker.endsWith("@chatroom");
-    }
-
-    private String getFromXml(String xmlmsg, String node) throws XmlPullParserException, IOException {
-        String xl = xmlmsg.substring(xmlmsg.indexOf("<msg>"));
-        // nativeurl
-        XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-        factory.setNamespaceAware(true);
-        XmlPullParser pz = factory.newPullParser();
-        pz.setInput(new StringReader(xl));
-        int v = pz.getEventType();
-        String result = "";
-        while (v != XmlPullParser.END_DOCUMENT) {
-            if (v == XmlPullParser.START_TAG) {
-                if (pz.getName().equals(node)) {
-                    pz.nextToken();
-                    result = pz.getText();
-                    break;
-                }
-            }
-            v = pz.next();
-        }
-        return result;
-    }
 }

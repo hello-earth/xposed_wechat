@@ -27,7 +27,7 @@ public class HookUtil implements IXposedHookLoadPackage{
 
     static ClassLoader cl;
     static Context context;
-    private static boolean isDug = false;
+    private static boolean isDug = true;
 
     private static void logObjInfo(Object obj) throws Throwable {
         Class cls = obj.getClass();
@@ -114,8 +114,10 @@ public class HookUtil implements IXposedHookLoadPackage{
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         logMsg("//////////////showCountTimeFinish///////////////// @"+getCurrentTime());
                         Object button = findObj(param.thisObject,"aT");
-                        if(button!=null)
-                            ((Button)button).performClick();
+                        if(button!=null){
+                            logMsg("((Button)button).performClick()");
+//                            ((Button)button).performClick();
+                        }
                     }
                 }
         );
@@ -147,12 +149,7 @@ public class HookUtil implements IXposedHookLoadPackage{
                                 AlertDialog dialog = builder.create();
                                 dialog.show();
                             } else {
-                                new Handler().postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(context,"///*////暂不可签约///*////\n"+((Button)button).getText().toString(),Toast.LENGTH_SHORT).show();
-                                    }
-                                }, 1300);
+                                Toast.makeText(context,"///*////暂不可签约///*////\n"+((Button)button).getText().toString(),Toast.LENGTH_LONG).show();
                             }
                         }
                     }
