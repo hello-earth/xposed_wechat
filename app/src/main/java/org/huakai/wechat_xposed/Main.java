@@ -1,14 +1,10 @@
 package org.huakai.wechat_xposed;
 
-import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Handler;
-
-import org.huakai.wechat_xposed.ledscoket.SocketService;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -20,7 +16,6 @@ import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
-import static de.robv.android.xposed.XposedHelpers.findClass;
 
 public class Main implements IXposedHookLoadPackage{
 
@@ -91,17 +86,13 @@ public class Main implements IXposedHookLoadPackage{
         if(reciver==null) {
             reciver = new OnGotsmsBroadcastReceiver();
             IntentFilter filter = new IntentFilter();
-            filter.addAction("wxRobot.action.onGotsms");
+            filter.addAction("wxRobot.action.onGotEncrypt");
             context.registerReceiver(reciver, filter);
-            Intent startServiceIntent = new Intent(context, SocketService.class);
-            startServiceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startService(startServiceIntent);
         }
         synchronized (paramClassLoaders) {
             paramClassLoaders.add(cl);
         }
         HideModule.hide(cl);
-        logMsg("addClassLoader~~~~ paramClassLoaders size="+paramClassLoaders.size());
         XposedHelpers.findClass("com.zcbl.driving_simple.activity.MyApplication",cl);
         hookMyApplication(cl);
     }

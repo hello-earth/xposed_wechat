@@ -37,8 +37,6 @@
 
         <receiver android:name=".TaskWorker" />
 
-        <service android:name=".ledscoket.SocketService" />
-
     </application>
 
 </manifest>
