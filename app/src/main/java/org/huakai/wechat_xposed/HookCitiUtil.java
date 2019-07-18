@@ -127,7 +127,7 @@ public class HookCitiUtil implements IXposedHookLoadPackage{
     }
 
     private void hookMyMethod2() {
-        findAndHookMethod("com.ziroom.commonlibrary.a.a", cl, "onSuccess",
+        findAndHookMethod("com.ziroom.commonlibrary.S2cRspBodyWrapPB.S2cRspBodyWrapPB", cl, "onSuccess",
                 int.class, Object.class, new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
@@ -185,7 +185,7 @@ public class HookCitiUtil implements IXposedHookLoadPackage{
                     }
                 }
         );
-        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignedCertInfoConfirmActivity", cl, "a",
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignedCertInfoConfirmActivity", cl, "S2cRspBodyWrapPB",
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
@@ -197,7 +197,7 @@ public class HookCitiUtil implements IXposedHookLoadPackage{
                 }
         );
 
-        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignerAptitudeActivity", cl, "a",
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignerAptitudeActivity", cl, "S2cRspBodyWrapPB",
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
@@ -208,7 +208,7 @@ public class HookCitiUtil implements IXposedHookLoadPackage{
                 }
         );
 
-        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignedLeaseInfoActivity", cl, "a",
+        findAndHookMethod("com.ziroom.ziroomcustomer.signed.SignedLeaseInfoActivity", cl, "S2cRspBodyWrapPB",
                 "com.ziroom.ziroomcustomer.model.TenancyInfo",
                 new XC_MethodHook() {
                     @Override
@@ -232,7 +232,7 @@ public class HookCitiUtil implements IXposedHookLoadPackage{
                         List<Integer> ints = (List<Integer>)XposedHelpers.callMethod(obj, "getmList");
                         obj = XposedHelpers.callMethod(obj, "getmOnCheck");
                         XposedHelpers.callMethod(obj, "onItemClick", new Object[]{ints.indexOf(3)});
-                        final Object button = findObj(param.thisObject,"c");
+                        final Object button = findObj(param.thisObject,"S2cRspBodyWrapPB");
                         if(button!=null)
                             new Handler().post(new Runnable() {
                                 @Override
@@ -283,7 +283,7 @@ public class HookCitiUtil implements IXposedHookLoadPackage{
                         logMsg("//////////////PayInformationActivity$1///////////////// @"+getCurrentTime());
                         Message msg = (Message)(param.args[0]);
                         if(msg.what==69664 && ((Boolean) XposedHelpers.callMethod(msg.obj,"getSuccess")).booleanValue()){
-                            Object button = findObj(findObj(param.thisObject,"a"),"D");
+                            Object button = findObj(findObj(param.thisObject,"S2cRspBodyWrapPB"),"D");
                             if(button!=null) {
                                 ((Button) button).performClick();
                             }
@@ -300,7 +300,7 @@ public class HookCitiUtil implements IXposedHookLoadPackage{
                         logMsg("//////////////ConfirmContractActivity$1///////////////// @"+getCurrentTime());
                         Message msg = (Message)(param.args[0]);
                         if(msg.what==69779 && ((Boolean) XposedHelpers.callMethod(msg.obj,"getSuccess")).booleanValue()){
-                            Object button = findObj(findObj(param.thisObject,"a"),"K");
+                            Object button = findObj(findObj(param.thisObject,"S2cRspBodyWrapPB"),"K");
                             if(button!=null) {
                                 ((Button) button).performClick();
                             }

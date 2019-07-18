@@ -8,14 +8,29 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.design.widget.FloatingActionButton;
+import android.text.Layout;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListPopupWindow;
+import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -25,7 +40,10 @@ public class MainActivity extends Activity{
 	private String TAG = "wechat_xposed";
 	private OnRespondBroadcastReceiver reciver;
 	private String hiddentime,now,inbjtime,imageId;
-
+	private PopupWindow mPopupWindow;
+    private ListPopupWindow mListPop;
+    private ArrayList<String> lists;
+    private Button button;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -36,14 +54,81 @@ public class MainActivity extends Activity{
 			filter.addAction("wxRobot.action.onRespond");
 			registerReceiver(reciver, filter);
 		}
+        button = (Button)findViewById(R.id.button);
+        final View rootView = ((View)button.getParent());
 		String a = "{\"mode\":\"newLogin\",\"client_id\":\"1\",\"mobile\":\"15718881312\",\"phone_region\":\"0086\",\"BaseAppType\":\"android\",\"BaseAppVersion\":\"1.3.0\",\"SystemVersion\":\"5.1\",\"appIdentifier\":\"com.weimob.mdstore\",\"deviceMake\":\"Meizu\",\"deviceType\":\"PRO 5\"}";
 		((TextView)findViewById(R.id.textView)).setText(getSignStr(a));
-		findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
+        button.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				loadDex();
+				sendbroad();
 			}
 		});
+
+		ImageView imageView = new ImageView(this);
+		imageView.setBackgroundResource(R.mipmap.ic_launcher);
+		mPopupWindow = new PopupWindow(imageView, WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT);
+		imageView.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+                showProvince(button);
+			}
+		});
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mPopupWindow.showAtLocation(rootView, Gravity.BOTTOM | Gravity.RIGHT,  100, 170);
+            }
+        },500);
+
+	}
+
+	private void sendbroad(){
+		Intent mIntent = new Intent();
+		mIntent.setAction("wxRobot.action.onSwitch_1");
+		mIntent.putExtra("msg", "ok");
+		sendBroadcast(mIntent);
+	}
+
+	private void showProvince(View imageView){
+        lists = new ArrayList<>();
+        lists.add("江苏省");
+        lists.add("浙江省");
+        lists.add("广东省");
+        lists.add("福建省");
+        lists.add("安徽省");
+        lists.add("河北省");
+        lists.add("河南省");
+        lists.add("江苏省");
+        lists.add("浙江省");
+        lists.add("广东省");
+        lists.add("福建省");
+        lists.add("安徽省");
+        lists.add("河北省");
+        lists.add("河南省");
+        lists.add("江西省");
+        lists.add("广西省");
+        lists.add("海南省");
+        lists.add("湖南省");
+        lists.add("湖北省");
+        lists.add("山西省");
+        lists.add("四川省");
+        mListPop = new ListPopupWindow(this);
+        mListPop.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, lists));
+        mListPop.setWidth(ViewGroup.LayoutParams.MATCH_PARENT);
+        mListPop.setHeight(ViewGroup.LayoutParams.MATCH_PARENT);
+        mListPop.setAnchorView(imageView);
+        mListPop.setHorizontalOffset(-30);
+        mListPop.setModal(true);//设置是否是模式
+        mListPop.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view,
+                                    int position, long id) {
+                Toast.makeText(MainActivity.this,lists.get(position),Toast.LENGTH_SHORT).show();
+                mListPop.dismiss();
+            }
+        });
+        mListPop.show();
 	}
 
 	private void loadDex() {
@@ -89,7 +174,7 @@ public class MainActivity extends Activity{
 		return a;
 	}
 
-	private static final String[] strDigits = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
+	private static final String[] strDigits = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "S2cRspBodyWrapPB", "f", "S2cRspBodyWrapPB", "S2cRspBodyWrapPB", "e", "f" };
 
 	private static String byteToArrayString(byte paramByte)
 	{

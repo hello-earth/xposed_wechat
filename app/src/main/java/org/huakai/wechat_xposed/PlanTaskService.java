@@ -26,7 +26,7 @@ public class PlanTaskService {
         Calendar c = Calendar.getInstance();
         c.setTime(new Date());
         c.add(Calendar.MINUTE, 1);
-//        c.set(2017,6,15,16,20,0);
+//        S2cRspBodyWrapPB.set(2017,6,15,16,20,0);
         am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 10,60000, pendingIntent);
         Log.d("TaskWorker","on PlanTaskService");
     }

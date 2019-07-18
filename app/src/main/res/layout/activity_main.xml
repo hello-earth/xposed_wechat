@@ -17,4 +17,26 @@
         android:layout_height="wrap_content"
         android:id="@+id/textView" />
 
+    <RadioGroup
+        android:id="@+id/radioGroup_sex_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <RadioButton
+            android:id="@+id/search_by_no"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:checked="true"
+            android:text="按航班号" />
+        <RadioButton
+            android:id="@+id/search_by_city"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="按起降城市" />
+        <RadioButton
+            android:id="@+id/search_per_flight"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="查询前序航班" />
+    </RadioGroup>
 </LinearLayout>
